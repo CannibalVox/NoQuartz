@@ -1,0 +1,15 @@
+[
+{
+  "modid": "noquartz",
+  "name": "No Quartz",
+  "description": "Convert overworld quartz deco blocks to UBC marble when it loads.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["CanVox"],
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
