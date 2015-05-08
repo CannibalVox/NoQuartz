@@ -23,6 +23,9 @@ public class NoQuartzMod
     private static Block ubcSlab;
     private static Block ubcDoubleSlab;
     private static Block ubcBlock;
+    private static Block chiselStairs;
+    private static Block chiselSlab;
+    private static Block chiselBlock;
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event)
@@ -36,6 +39,9 @@ public class NoQuartzMod
         ubcSlab = (Block)Block.blockRegistry.getObject("UndergroundBiomes:metamorphicStoneHalfSlab");
         ubcDoubleSlab = (Block)Block.blockRegistry.getObject("UndergroundBiomes:metamorphicStoneFullSlab");
         ubcBlock = (Block)Block.blockRegistry.getObject("UndergroundBiomes:metamorphicStone");
+        chiselStairs = (Block)Block.blockRegistry.getObject("chisel:marbleStairs.0");
+        chiselBlock = (Block)Block.blockRegistry.getObject("chisel:chisel.marble");
+        chiselSlab = (Block)Block.blockRegistry.getObject("chisel:chisel.marbleSlab");
     }
 
     @SubscribeEvent
@@ -58,6 +64,7 @@ public class NoQuartzMod
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     Block block = chunk.getBlock(x,y,z);
+                    int meta = chunk.getBlockMetadata(x, y, z);
                     String blockName = Block.blockRegistry.getNameForObject(block);
 
                     if (blockName.equals("minecraft:quartz_stairs"))
@@ -68,40 +75,46 @@ public class NoQuartzMod
                         convertDoubleSlab(world, x+worldX,y,z+worldZ);
                     else if (blockName.equals("minecraft:quartz_block"))
                         convertBlock(world, x+worldX, y, z+worldZ);
+
+                    if (y < 120)
+                      continue;
+
+                    if (blockName.equals("UndergroundBiomes:metamorphicStone") && (meta&7) == 2)
+                        convertBlock(world, x+worldX, y, z+worldZ);
+                    else if (blockName.equals("UndergroundBiomes:metamorphicStoneHalfSlab") && (meta & 7) == 2)
+                        convertSingleSlab(world, x+worldX, y, z+worldZ);
+                    else if (blockName.equals("UndergroundBiomes:metamorphicStoneFullSlab") && (meta & 7) == 2)
+                        convertDoubleSlab(world, x+worldX, y, z+worldZ);
+                    else if (blockName.equals("UndergroundBiomes:stairs")) {
+                        TileEntity entity = world.getTileEntity(x+worldX, y, z+worldZ);
+                        if (entity != null) {
+                            NBTTagCompound stairTag = new NBTTagCompound();
+                            entity.writeToNBT(stairTag);
+                            if (stairTag.getInteger("index") == 2)
+                                convertStairs(world, x+worldX, y, z+worldZ);
+                        }
+                    }
                 }
             }
         }
     }
 
     private void convertStairs(World world, int x, int y, int z) {
-        int metadata = world.getBlockMetadata(x,y,z);
-        world.setBlock(x, y, z, ubcStairs, metadata, 3);
-        makeTileEntityMarble(world, x, y, z);
+        int metadata = world.getBlockMetadata(x,y,z) & 7;
+        world.setBlock(x, y, z, chiselStairs, metadata, 3);
     }
 
     private void convertSingleSlab(World world, int x, int y, int z) {
-        int metadata = world.getBlockMetadata(x,y,z) & 8;
-        world.setBlock(x, y, z, ubcSlab, metadata|2, 3);
+        boolean up = (world.getBlockMetadata(x,y,z) & 8) != 0;
+        if (!up)
+            world.setBlock(x, y, z, chiselSlab, 0, 3);
     }
 
     private void convertDoubleSlab(World world, int x, int y, int z) {
-        int metadata = world.getBlockMetadata(x, y, z) & 8;
-        world.setBlock(x, y, z, ubcDoubleSlab, metadata|2, 3);
+        world.setBlock(x, y, z, chiselBlock, 0, 3);
     }
 
     private void convertBlock(World world, int x, int y, int z) {
-        world.setBlock(x, y, z, ubcBlock, 2, 3);
-    }
-
-    private void makeTileEntityMarble(World world, int x, int y, int z) {
-        TileEntity tileEntity = world.getTileEntity(x, y, z);
-        if (tileEntity == null)
-            return;
-
-        NBTTagCompound tileEntityData = new NBTTagCompound();
-        tileEntity.writeToNBT(tileEntityData);
-        tileEntityData.setInteger("index", 2);
-        tileEntity.readFromNBT(tileEntityData);
-        tileEntity.markDirty();
+        world.setBlock(x, y, z, chiselBlock, 0, 3);
     }
 }
